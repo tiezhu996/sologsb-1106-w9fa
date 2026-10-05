@@ -41,6 +41,58 @@ class WoodprintDatabase extends Dexie {
           })
         }
       })
+
+    this.version(3)
+      .stores({
+        drafts: 'id, genre, status, title, schemaRev',
+        blocks: 'id, draftId, colorNo, carvedBy, state, schemaRev',
+        carvers: 'id, specialty, skillLevel, name, schemaRev',
+        batches: 'id, draftId, batchNo, printedAt, paperBatch, schemaRev',
+        nodes: 'id, batchId, blockId, stage, seq, operator, schemaRev',
+      })
+      .upgrade(async (transaction) => {
+        const blockTable = transaction.table<Block, string>('blocks')
+        const blocksByDraft = new Map<string, Block[]>()
+        await blockTable.each((block) => {
+          const list = blocksByDraft.get(block.draftId) ?? []
+          list.push(block)
+          blocksByDraft.set(block.draftId, list)
+        })
+        const readyByDraft = new Map<string, boolean>()
+        for (const [draftId, list] of blocksByDraft) {
+          readyByDraft.set(draftId, list.length > 0 && list.every((b) => b.state === '已刻成' || b.state === '已修版'))
+        }
+
+        await transaction
+          .table<StoredRecord, string>('batches')
+          .toCollection()
+          .modify((batch) => {
+            const kind = readyByDraft.get(String(batch.draftId)) ? '正式印' : '试印'
+            const qty = Number(batch.qty ?? 0)
+            const firstEvent = {
+              printedAt: String(batch.printedAt ?? ''),
+              kind,
+              qty,
+              pieceCount: Number(batch.pieceCount ?? 0),
+              inkNote: String(batch.inkNote ?? ''),
+              qcNote: String(batch.qcNote ?? ''),
+            }
+            batch.trialQty = kind === '试印' ? qty : 0
+            batch.firstFormalQty = kind === '正式印' ? qty : 0
+            batch.reprintCount = 0
+            batch.events = [firstEvent]
+            batch.schemaRev = 3
+            delete batch.qty
+            delete batch.pieceCount
+          })
+
+        const tableNames = ['drafts', 'blocks', 'carvers', 'nodes'] as const
+        for (const tableName of tableNames) {
+          await transaction.table(tableName).toCollection().modify((record: StoredRecord) => {
+            record.schemaRev = 3
+          })
+        }
+      })
   }
 }
 
@@ -144,35 +196,68 @@ const batches: PrintBatch[] = [
   {
     id: 'batch-ll-001',
     draftId: 'draft-liannian-youyu',
-    batchNo: '莲鱼-甲辰-01',
+    batchNo: '莲年有余-2026-01',
     printedAt: '2026-01-18',
     paperBatch: '绵竹-2601',
     inkNote: '矿物黄加桃胶，红料略减胶，绿料保持原稠度。',
-    qty: 480,
-    pieceCount: 4,
     qcNote: '墨线版：线条饱满；黄版：右下荷叶略轻；红版：娃娃衣襟套准；绿版：未见走版。',
+    trialQty: 0,
+    firstFormalQty: 480,
+    reprintCount: 0,
+    events: [
+      {
+        printedAt: '2026-01-18',
+        kind: '正式印',
+        qty: 480,
+        pieceCount: 4,
+        inkNote: '矿物黄加桃胶，红料略减胶，绿料保持原稠度。',
+        qcNote: '墨线版：线条饱满；黄版：右下荷叶略轻；红版：娃娃衣襟套准；绿版：未见走版。',
+      },
+    ],
   },
   {
     id: 'batch-ll-002',
     draftId: 'draft-liannian-youyu',
-    batchNo: '莲鱼-甲辰-02',
+    batchNo: '莲年有余-2026-02',
     printedAt: '2026-02-06',
     paperBatch: '绵竹-2603',
     inkNote: '黄料补入少量藤黄，红料调薄半成。',
-    qty: 320,
-    pieceCount: 4,
     qcNote: '墨线版：清晰；黄版：套准；红版：左肩偏差约半线；绿版：荷叶边略重。',
+    trialQty: 0,
+    firstFormalQty: 320,
+    reprintCount: 0,
+    events: [
+      {
+        printedAt: '2026-02-06',
+        kind: '正式印',
+        qty: 320,
+        pieceCount: 4,
+        inkNote: '黄料补入少量藤黄，红料调薄半成。',
+        qcNote: '墨线版：清晰；黄版：套准；红版：左肩偏差约半线；绿版：荷叶边略重。',
+      },
+    ],
   },
   {
     id: 'batch-ms-001',
     draftId: 'draft-menshen-qin',
-    batchNo: '门神-试印-01',
+    batchNo: '秦琼敬德-试印-01',
     printedAt: '2026-02-20',
     paperBatch: '泾县-2602',
     inkNote: '烟墨加骨胶，黄料以赭石压调。',
-    qty: 120,
-    pieceCount: 2,
     qcNote: '墨线版：样张无断线；黄版：肩甲外侧出现轻微走版，已重校定位。',
+    trialQty: 120,
+    firstFormalQty: 0,
+    reprintCount: 0,
+    events: [
+      {
+        printedAt: '2026-02-20',
+        kind: '试印',
+        qty: 120,
+        pieceCount: 2,
+        inkNote: '烟墨加骨胶，黄料以赭石压调。',
+        qcNote: '墨线版：样张无断线；黄版：肩甲外侧出现轻微走版，已重校定位。',
+      },
+    ],
   },
 ]
 
@@ -194,7 +279,7 @@ const nodes: ProcessNode[] = [
 ]
 
 function withSchemaRevision<T extends object>(records: T[]): Array<T & { schemaRev: number }> {
-  return records.map((record) => ({ ...record, schemaRev: 2 }))
+  return records.map((record) => ({ ...record, schemaRev: 3 }))
 }
 
 export const db = new WoodprintDatabase()

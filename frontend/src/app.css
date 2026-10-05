@@ -898,6 +898,87 @@ textarea:focus {
   color: var(--ink-soft);
 }
 
+.batch-number h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.kind-tag {
+  font-style: normal;
+  font-size: 0.7rem;
+  font-weight: 800;
+  line-height: 1;
+  padding: 0.22rem 0.45rem;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+
+.kind-tag.formal {
+  color: #fff;
+  background: var(--jade);
+}
+
+.kind-tag.trial {
+  color: var(--cinnabar-dark);
+  background: rgba(169, 52, 39, 0.12);
+}
+
+.batch-counts {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+
+.batch-counts > div {
+  min-width: 5.6rem;
+}
+
+.kind-banner {
+  margin: 0.4rem 0 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--line-strong);
+  border-left: 3px solid var(--gold);
+  border-radius: var(--radius-md);
+  background: var(--paper-deep);
+  font-size: 0.84rem;
+  line-height: 1.6;
+}
+
+.kind-banner.ready {
+  border-left-color: var(--jade);
+}
+
+.kind-banner p {
+  margin: 0.15rem 0;
+}
+
+.kind-banner .unready-list {
+  color: var(--ink-muted);
+}
+
+.kind-banner .merge-hint {
+  color: var(--ink-soft);
+}
+
+.event-log {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed var(--line);
+}
+
+.event-log ul {
+  margin: 0.35rem 0 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.event-log li {
+  font-size: 0.78rem;
+  color: var(--ink-muted);
+}
+
 .carver-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 23rem;

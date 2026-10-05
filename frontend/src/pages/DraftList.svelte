@@ -8,6 +8,7 @@
   import { useBlockOrder } from '../hooks/useBlockOrder'
   import type { DraftGenre, DraftStatus, Draft } from '../types/draft'
   import type { PrintBatch } from '../types/batch'
+  import { batchKind, formalPrintTotal } from '../types/batch'
   import { db } from '../utils/db'
 
   const { blocks: orderedBlocks, carvedRate } = useBlockOrder(null)
@@ -40,7 +41,11 @@
     const latest: Record<string, PrintBatch> = {}
     for (const batch of batches) {
       const current = latest[batch.draftId]
-      if (!current || batch.printedAt > current.printedAt) latest[batch.draftId] = batch
+      const batchDate = batch.events[batch.events.length - 1]?.printedAt ?? batch.printedAt
+      const currentDate = current
+        ? (current.events[current.events.length - 1]?.printedAt ?? current.printedAt)
+        : ''
+      if (!current || batchDate > currentDate) latest[batch.draftId] = batch
     }
     return latest
   })
@@ -250,8 +255,12 @@
         <div class="latest-batch">
           <span>最近批次</span>
           {#if data.batch}
-            <strong>{data.batch.batchNo}</strong>
-            <small>{data.batch.printedAt.replace(/-/g, '.')} · 印 {data.batch.qty} 张</small>
+            {@const latestEvent = data.batch.events[data.batch.events.length - 1]}
+            <strong>
+              {data.batch.batchNo}
+              <em class="kind-tag {batchKind(data.batch) === '正式印' ? 'formal' : 'trial'}">{batchKind(data.batch)}</em>
+            </strong>
+            <small>{(latestEvent?.printedAt ?? data.batch.printedAt).replace(/-/g, '.')} · 正式印 {formalPrintTotal(data.batch)} 张{data.batch.reprintCount > 0 ? ` · 补印 ${data.batch.reprintCount} 次` : ''}</small>
           {:else}
             <strong>尚未试印</strong>
             <small>版片齐备后可登记首批</small>
