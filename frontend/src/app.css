@@ -289,6 +289,10 @@ footer {
   box-shadow: var(--shadow);
 }
 
+.summary-strip.five {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
 .summary-strip > div {
   min-height: 6.2rem;
   display: flex;
@@ -423,6 +427,51 @@ textarea:focus {
   background: rgba(169, 52, 39, 0.065);
   font-size: 0.82rem;
   line-height: 1.55;
+}
+
+.print-gate {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.4rem 0.75rem;
+  margin-bottom: 1.1rem;
+  padding: 0.75rem 0.95rem;
+  border: 1px solid #e1b1ab;
+  border-left: 3px solid var(--cinnabar);
+  border-radius: var(--radius-sm);
+  background: rgba(169, 52, 39, 0.06);
+}
+
+.print-gate.formal {
+  border-color: #a9cdbb;
+  border-left-color: var(--jade);
+  background: rgba(47, 118, 88, 0.07);
+}
+
+.print-gate b {
+  color: var(--cinnabar-dark);
+  font-size: 0.92rem;
+}
+
+.print-gate.formal b {
+  color: var(--jade);
+}
+
+.print-gate span {
+  color: var(--ink-muted);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.merge-hint {
+  margin-top: 1rem;
+}
+
+.new-hint {
+  margin-top: 1rem;
+  border-left-color: var(--gold);
+  color: var(--gold);
+  background: rgba(187, 132, 45, 0.08);
 }
 
 .filter-bar {
@@ -616,6 +665,27 @@ textarea:focus {
 
 .latest-batch small {
   color: var(--ink-muted);
+}
+
+.mini-kind {
+  display: inline-flex;
+  vertical-align: middle;
+  margin-left: 0.4rem;
+  padding: 0.08rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.64rem;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.mini-kind.kind-试印 {
+  color: #fff;
+  background: var(--gold);
+}
+
+.mini-kind.kind-正式印 {
+  color: #fff;
+  background: var(--jade);
 }
 
 .draft-card .button {
@@ -832,6 +902,28 @@ textarea:focus {
   font-size: 0.7rem;
 }
 
+.deviation-grid .state-chip {
+  margin-left: auto;
+  padding: 0.12rem 0.5rem;
+  border-radius: 999px;
+  background: #e6dac8;
+  color: #655647;
+  font-size: 0.68rem;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.deviation-grid .state-chip.state-已刻成,
+.deviation-grid .state-chip.state-已修版 {
+  background: rgba(47, 118, 88, 0.14);
+  color: var(--jade);
+}
+
+.deviation-grid .state-chip.state-在刻 {
+  background: #f3dfad;
+  color: #79540e;
+}
+
 .batch-list {
   display: grid;
   gap: 1rem;
@@ -852,6 +944,35 @@ textarea:focus {
 
 .batch-number h2 {
   margin: 0.35rem 0;
+}
+
+.batch-number .print-kind {
+  display: inline-flex;
+  vertical-align: middle;
+  margin-left: 0.55rem;
+  padding: 0.16rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-style: normal;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.print-kind.kind-试印 {
+  color: #fff;
+  background: var(--gold);
+}
+
+.print-kind.kind-正式印 {
+  color: #fff;
+  background: var(--jade);
+}
+
+.reprint-line {
+  margin: 0.25rem 0 0 !important;
+  color: var(--cinnabar) !important;
+  font-size: 0.76rem !important;
+  font-weight: 800;
 }
 
 .batch-number p {
@@ -1102,6 +1223,7 @@ textarea:focus {
   }
 
   .summary-strip,
+  .summary-strip.five,
   .form-grid,
   .form-grid.three,
   .deviation-grid {
@@ -1145,6 +1267,7 @@ textarea:focus {
   }
 
   .summary-strip,
+  .summary-strip.five,
   .form-grid,
   .form-grid.three,
   .deviation-grid {

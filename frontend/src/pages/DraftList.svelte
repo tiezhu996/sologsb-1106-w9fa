@@ -250,8 +250,11 @@
         <div class="latest-batch">
           <span>最近批次</span>
           {#if data.batch}
-            <strong>{data.batch.batchNo}</strong>
-            <small>{data.batch.printedAt.replace(/-/g, '.')} · 印 {data.batch.qty} 张</small>
+            <strong>
+              {data.batch.batchNo}
+              <em class={`mini-kind kind-${data.batch.printKind}`}>{data.batch.printKind}</em>
+            </strong>
+            <small>{data.batch.printedAt.replace(/-/g, '.')} · 累计 {data.batch.qty} 张{data.batch.reprintCount > 0 ? ` · 补印 ${data.batch.reprintCount} 次` : ''}</small>
           {:else}
             <strong>尚未试印</strong>
             <small>版片齐备后可登记首批</small>

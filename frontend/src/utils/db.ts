@@ -1,8 +1,8 @@
 import Dexie, { type Table } from 'dexie'
 import type { Draft } from '../types/draft'
-import type { Block } from '../types/block'
+import type { Block, BlockState } from '../types/block'
 import type { Carver } from '../types/carver'
-import type { PrintBatch } from '../types/batch'
+import type { PrintBatch, PrintKind } from '../types/batch'
 import type { ProcessNode } from '../types/node'
 
 type StoredRecord = Record<string, unknown> & { schemaRev?: number }
@@ -38,6 +38,42 @@ class WoodprintDatabase extends Dexie {
         for (const tableName of tableNames) {
           await transaction.table(tableName).toCollection().modify((record: StoredRecord) => {
             record.schemaRev = 2
+          })
+        }
+      })
+
+    this.version(3)
+      .stores({
+        drafts: 'id, genre, status, title, schemaRev',
+        blocks: 'id, draftId, colorNo, carvedBy, state, schemaRev',
+        carvers: 'id, specialty, skillLevel, name, schemaRev',
+        // 补印按画稿 + 纸张批号 + 印制日期归并原批，故为纸张批号与印制性质补索引。
+        batches: 'id, draftId, batchNo, printedAt, paperBatch, printKind, schemaRev',
+        nodes: 'id, batchId, blockId, stage, seq, operator, schemaRev',
+      })
+      .upgrade(async (transaction) => {
+        // 旧批次按当前版片现状回填性质：尚有“待刻/在刻”版片的记试印，全部刻成或修版的记正式印。
+        const allBlocks = await transaction.table<Block, string>('blocks').toArray()
+        const readyStates: ReadonlySet<BlockState> = new Set(['已刻成', '已修版'])
+
+        await transaction
+          .table<StoredRecord, string>('batches')
+          .toCollection()
+          .modify((batch) => {
+            const draftBlocks = allBlocks.filter((block) => block.draftId === String(batch.draftId))
+            const printKind: PrintKind =
+              draftBlocks.length > 0 && draftBlocks.every((block) => readyStates.has(block.state))
+                ? '正式印'
+                : '试印'
+            batch.printKind = printKind
+            batch.reprintCount ??= 0
+            batch.schemaRev = 3
+          })
+
+        const otherTables = ['drafts', 'blocks', 'carvers', 'nodes'] as const
+        for (const tableName of otherTables) {
+          await transaction.table(tableName).toCollection().modify((record: StoredRecord) => {
+            record.schemaRev = 3
           })
         }
       })
@@ -151,6 +187,9 @@ const batches: PrintBatch[] = [
     qty: 480,
     pieceCount: 4,
     qcNote: '墨线版：线条饱满；黄版：右下荷叶略轻；红版：娃娃衣襟套准；绿版：未见走版。',
+    // 莲年有余四版均已刻成或修版，可记正式印。
+    printKind: '正式印',
+    reprintCount: 0,
   },
   {
     id: 'batch-ll-002',
@@ -162,6 +201,9 @@ const batches: PrintBatch[] = [
     qty: 320,
     pieceCount: 4,
     qcNote: '墨线版：清晰；黄版：套准；红版：左肩偏差约半线；绿版：荷叶边略重。',
+    // 换了纸张批号（绵竹-2603），另开一批正式印。
+    printKind: '正式印',
+    reprintCount: 0,
   },
   {
     id: 'batch-ms-001',
@@ -173,6 +215,9 @@ const batches: PrintBatch[] = [
     qty: 120,
     pieceCount: 2,
     qcNote: '墨线版：样张无断线；黄版：肩甲外侧出现轻微走版，已重校定位。',
+    // 秦琼敬德尚有黄版在刻、红绿版待刻，只能记试印。
+    printKind: '试印',
+    reprintCount: 0,
   },
 ]
 
@@ -194,7 +239,7 @@ const nodes: ProcessNode[] = [
 ]
 
 function withSchemaRevision<T extends object>(records: T[]): Array<T & { schemaRev: number }> {
-  return records.map((record) => ({ ...record, schemaRev: 2 }))
+  return records.map((record) => ({ ...record, schemaRev: 3 }))
 }
 
 export const db = new WoodprintDatabase()
